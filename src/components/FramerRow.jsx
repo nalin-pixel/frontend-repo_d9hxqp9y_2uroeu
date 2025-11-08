@@ -1,96 +1,79 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useMemo } from 'react';
 
-/**
- * FramerRow
- * - Infinite, smooth horizontally scrolling image row
- * - 3D perspective tilt with mirrored direction support
- * - Uses CSS mask fade on both ends
- */
-export default function FramerRow({ images = [], direction = 'ltr', speed = 60, tilt = 7 }) {
-  const containerRef = useRef(null);
-  const listRef = useRef(null);
+/*
+  FramerRow renders a single infinite-scrolling row of images.
+  - direction: 1 for left-to-right, -1 for right-to-left
+  - speed: pixels per second (affects animation duration)
+  - tilt: degrees for rotateY perspective
+  - images: array of image URLs
+*/
+export default function FramerRow({ direction = -1, speed = 80, tilt = 8, images = [] }) {
+  const track = useMemo(() => {
+    // Duplicate the images to create a seamless loop
+    const base = images.length ? images : [
+      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1600&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1520975916090-3105956dac38?q=80&w=1600&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=1600&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=1600&auto=format&fit=crop',
+    ];
+    const withIds = base.map((src, idx) => ({ id: `a-${idx}`, src }));
+    const dup = base.map((src, idx) => ({ id: `b-${idx}`, src }));
+    return [...withIds, ...dup];
+  }, [images]);
 
-  // Duplicate the images to enable seamless infinite loop
-  const slides = useMemo(() => [...images, ...images], [images]);
-
-  useEffect(() => {
-    const list = listRef.current;
-    if (!list) return;
-
-    // Compute total width of a single cycle to set animation duration
-    const cycleWidth = list.scrollWidth / 2; // because we doubled
-    const pxPerSecond = speed; // logical speed control
-    const duration = Math.max(8, cycleWidth / pxPerSecond);
-
-    list.style.setProperty('--duration', `${duration}s`);
-    list.style.setProperty('--dir', direction === 'rtl' ? '-1' : '1');
-  }, [direction, speed, slides.length]);
-
-  const rowTilt = direction === 'rtl' ? -Math.abs(tilt) : Math.abs(tilt);
+  const duration = 40_000 / Math.max(speed, 10); // slower when speed small
+  const sign = direction >= 0 ? 1 : -1;
 
   return (
-    <section
-      ref={containerRef}
-      className="relative w-full overflow-hidden py-6 md:py-8"
-      aria-label="Framer style image row"
+    <div
+      className="relative w-full overflow-hidden py-3"
       style={{
         WebkitMaskImage:
-          'linear-gradient(to right, rgba(0,0,0,0) 0%, black 12.5%, black 87.5%, rgba(0,0,0,0) 100%)',
-        maskImage:
-          'linear-gradient(to right, rgba(0,0,0,0) 0%, black 12.5%, black 87.5%, rgba(0,0,0,0) 100%)',
+          'linear-gradient(to right, transparent, black 10%, black 90%, transparent)',
+        maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)'
       }}
     >
-      <ul
-        ref={listRef}
-        className="flex items-center gap-[10px] will-change-transform"
+      <style>{`
+        @keyframes scroll-x { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+      `}</style>
+      <div
+        className="flex gap-4 will-change-transform"
         style={{
-          animation: 'scroll var(--duration) linear infinite',
-          transform: 'translate3d(0,0,0)',
-          animationDirection: direction === 'rtl' ? 'reverse' : 'normal',
+          width: '200%',
+          animation: `scroll-x ${duration}s linear infinite`,
+          animationDirection: sign === 1 ? 'reverse' : 'normal',
         }}
       >
-        {slides.map((src, idx) => (
-          <li
-            key={`${idx}-${src}`}
-            className="relative shrink-0 rounded-xl md:rounded-2xl"
-            style={{ width: '22.5vw', maxWidth: 320, aspectRatio: '3/5' }}
-            aria-hidden={idx >= images.length}
+        {track.map((img, i) => (
+          <div
+            key={img.id}
+            aria-hidden={i >= track.length / 2}
+            className="relative h-36 md:h-44 lg:h-52 aspect-[4/3] shrink-0 rounded-xl overflow-hidden bg-neutral-800/40 ring-1 ring-white/10"
+            style={{
+              perspective: '700px',
+            }}
           >
             <div
-              className="absolute inset-0 rounded-inherit"
+              className="absolute inset-0"
               style={{
-                position: 'absolute',
-                inset: 0,
-                borderRadius: 'inherit',
-                transform: `perspective(500px) rotateY(${rowTilt}deg)`,
                 transformStyle: 'preserve-3d',
+                transform: `translateZ(0) rotateY(${sign * tilt}deg)`,
+                transition: 'transform 200ms ease-out',
               }}
             >
               <img
-                src={src}
-                alt=""
+                src={img.src}
+                alt="Gallery item"
+                className="absolute inset-0 w-full h-full object-cover"
                 loading="lazy"
-                className="block w-full h-full"
-                style={{
-                  objectFit: 'cover',
-                  objectPosition: 'center',
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: 'inherit',
-                  display: 'block',
-                }}
+                draggable={false}
               />
+              <div className="absolute inset-0 bg-gradient-to-tr from-black/10 to-transparent pointer-events-none" />
             </div>
-          </li>
+          </div>
         ))}
-      </ul>
-
-      <style>{`
-        @keyframes scroll {
-          from { transform: translateX(0); }
-          to { transform: translateX(calc(var(--dir, 1) * -50%)); }
-        }
-      `}</style>
-    </section>
+      </div>
+    </div>
   );
 }

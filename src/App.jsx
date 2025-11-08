@@ -1,32 +1,23 @@
 import React, { useState } from 'react';
 import Header from './components/Header';
-import FramerRows from './components/FramerRows';
 import Controls from './components/Controls';
+import FramerRows from './components/FramerRows';
 import Credits from './components/Credits';
 
 export default function App() {
-  const [speed, setSpeed] = useState(60);
-  const [tilt, setTilt] = useState(7);
+  const [speed, setSpeed] = useState(120);
+  const [tilt, setTilt] = useState(8);
 
   return (
-    <div className="min-h-screen w-full bg-[#0a0a0b] text-white flex flex-col items-center">
-      <Header />
-
-      <Controls speed={speed} setSpeed={setSpeed} tilt={tilt} setTilt={setTilt} />
-
-      {/* Rows */}
-      <div className="w-full max-w-[1400px] px-2 sm:px-4 md:px-8">
-        {/* Pass controls down by cloning with props */}
-        <FramerRowsWrapper speed={speed} tilt={tilt} />
+    <div className="min-h-screen w-full bg-neutral-950 text-white flex flex-col">
+      <div className="relative flex-1 flex flex-col items-center px-4 md:px-8">
+        <Header />
+        <Controls speed={speed} setSpeed={setSpeed} tilt={tilt} setTilt={setTilt} />
+        <div className="mt-8 w-full">
+          <FramerRows speed={speed} tilt={tilt} />
+        </div>
+        <Credits />
       </div>
-
-      <Credits />
     </div>
   );
-}
-
-function FramerRowsWrapper({ speed, tilt }) {
-  // Reimport locally to pass dynamic props without prop drilling through the component file
-  const FramerRows = require('./components/FramerRows').default;
-  return <FramerRows speed={speed} tilt={tilt} />;
 }
