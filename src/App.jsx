@@ -1,28 +1,32 @@
-import { useState } from 'react'
+import React, { useState } from 'react';
+import Header from './components/Header';
+import FramerRows from './components/FramerRows';
+import Controls from './components/Controls';
+import Credits from './components/Credits';
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [speed, setSpeed] = useState(60);
+  const [tilt, setTilt] = useState(7);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">
-          Vibe Coding Platform
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Your AI-powered development environment
-        </p>
-        <div className="text-center">
-          <button
-            onClick={() => setCount(count + 1)}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
-          >
-            Count is {count}
-          </button>
-        </div>
+    <div className="min-h-screen w-full bg-[#0a0a0b] text-white flex flex-col items-center">
+      <Header />
+
+      <Controls speed={speed} setSpeed={setSpeed} tilt={tilt} setTilt={setTilt} />
+
+      {/* Rows */}
+      <div className="w-full max-w-[1400px] px-2 sm:px-4 md:px-8">
+        {/* Pass controls down by cloning with props */}
+        <FramerRowsWrapper speed={speed} tilt={tilt} />
       </div>
+
+      <Credits />
     </div>
-  )
+  );
 }
 
-export default App
+function FramerRowsWrapper({ speed, tilt }) {
+  // Reimport locally to pass dynamic props without prop drilling through the component file
+  const FramerRows = require('./components/FramerRows').default;
+  return <FramerRows speed={speed} tilt={tilt} />;
+}
